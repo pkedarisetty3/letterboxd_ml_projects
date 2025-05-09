@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 import pandas as pd 
 from datetime import datetime
 import argparse
+from docx import Document
+from docx.shared import Pt
+import io
+import sys
 
 def letterboxd_to_fb(df, month, year, prompts):
     # only get the reviews in the specific timeframe
@@ -68,7 +72,7 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == "__main__":
-    # 1) parse CLI args
+    # parse CLI args
     args = parse_args()
     
     # import API KEY from .env
@@ -115,5 +119,21 @@ if __name__ == "__main__":
         f"\nExample Summary: {summary_vn}" 
 
 
+    # save original stdout if needed
+    orig_stdout = sys.stdout
+    # capture output of print statements in letterboxd_to_fb
+    output = io.StringIO()
+    sys.stdout = output  # Redirect stdout to the StringIO object
     letterboxd_to_fb(df, month, year, prompts)
+    sys.stdout = orig_stdout  # Reset stdout to its original state
+
+    # Save the output to a Word document with the default font
+    doc = Document()
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Aptos'
+    font.size = Pt(12)
+    doc.add_paragraph(output.getvalue(), style='Normal')
+    title = f"{year} {month:02d} LLM Output"
+    doc.save(f'output/{title}.docx')
     
